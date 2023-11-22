@@ -190,4 +190,4 @@ conda env create -f requirements_bayesiankin.yaml
 ```
 see more details in `/notebooks/bayesiankinetics/kinetics_analysis_bypyro.ipynb`  
 It takes less than 1 day to estimate the kinetics of 2000 sequences x2 replicates with SVI.
-The NGS data are available from [this link](https://drive.google.com/drive/folders/1aqhNBXSfN_eXbUqf6wCdxnVHd_OgIg7X?usp=share_link).
+The NGS data are available on [PRJNA1044007 of SRA](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1044007).
