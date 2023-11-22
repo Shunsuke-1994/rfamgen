@@ -23,22 +23,18 @@ class CovarianceModel:
         for _ in range(n):
             seq_ss        = "S_0"
             current_state = "S_0"
-            # "E-> "となるのは
+            # When "E-> ",
             # 1: next node == END  ---> next_state = None and break
             # 2: next node == BEGL ---> pop next_state from bif_stack
             self._bif_stack = deque()
             ins_loop_counter = 0
             break_ins = False
             while current_state != None:
-                # print("break_ins", break_ins)
                 rhs, next_state, probs_trans = self._fetch_rule_and_next(current_state, sample, break_ins = break_ins)
                 break_ins = False
-                # print(current_state, next_state, probs_trans)
                 if current_state == next_state:
                     ins_loop_counter += 1
-                    # print("ins_loop_counter", ins_loop_counter)
-                    # print("ins thresh", ins_loop_counter)
-                    if ins_loop_counter == int(1/(1-probs_trans)): # call 4 times if 0.8, then break
+                    if ins_loop_counter == int(1/(1-probs_trans)):
                         break_ins = True                        
                         ins_loop_counter = 0
                 seq_ss          = seq_ss.replace(current_state, rhs, 1)
@@ -73,7 +69,7 @@ class CovarianceModel:
                 if break_ins: # escape from ins loop
                     prob_2nd = sorted(probs_trans, reverse=True)[1] #2nd max
                     next_state = child_states[probs_trans.index(prob_2nd)] #
-                    # print(child_states, probs_trans.index(prob_2nd))
+
                     if current_state == next_state: #exception in case that several top probs
                         next_state = child_states[probs_trans.index(prob_2nd)+1]
                 else:
@@ -242,7 +238,7 @@ class CMReader:
                     prob = float(0)
                 prob_trans.update({num_to_state[lowest_child_idx + i]:prob})
 
-            # if BIF, lowest_child_idxの左の列はBIF_Rを意味する.
+            # if BIF, left col of lowest_child_idx = BIF_R
             # prob o both splited state is １
             else:
                 prob_trans.update({num_to_state[lowest_child_idx]:float(1), num_to_state[int(state_line[6])]:float(1)})
@@ -461,28 +457,27 @@ class TracebackFileReader:
 
     def make_aligned_tbdict_from_tbdf(self,tbdf):
         """
-        fill zeros in missing st
-        tbdictの欠損値に0を補完する. 
-        テンプレとしてcm_dictを利用して編集する.  
+        Fill zeros in missing val in tbdict.
+        Use cm_dict as a template.
         """
         aligned_tbdict = copy.deepcopy(self.cm_deriv_dict)
         tbdict         = self._make_tbdict_from_tbdf(tbdf)
-        # node_dictの全てのkeyが存在するかを調べる
-        # 存在すれば, countを当てはめる
-        # 存在しなければ0をpadding.
+        # Is there all keys in node_dict?
+        # if there, assign count
+        # else padding with zero.
         for node, states_in_nodes in aligned_tbdict.items():
             for parent_state, trans_emit in states_in_nodes.items():
-                # parent stateがない場合には, 全て0を当てる
+                # no parent state, assign zero
                 if not parent_state in tbdict: 
                     for child_state, prob in trans_emit["trans"].items():
                         aligned_tbdict[node][parent_state]["trans"][child_state] = 0
                     for nuc, prob in trans_emit["emit"].items():
                         aligned_tbdict[node][parent_state]["emit"][nuc] = 0
                 else:
-                    # panret stateが存在する場合は, さらに深く調べる.
+                    # any panret state, search deeper
                     for child_state, prob in trans_emit["trans"].items():
-                        # 最尤推定された確率を計算するために合計transition数でわる
-                        # BIFは特殊な例とする.
+                        # devide by num of transitions.
+                        # BIF is a special case
                         sum_count_from_parent = 1 if "B" in parent_state else sum(tbdict[parent_state]["trans"].values()) 
                         if child_state in tbdict[parent_state]["trans"]:
                             val = tbdict[parent_state]["trans"][child_state]/sum_count_from_parent
@@ -502,28 +497,23 @@ class TracebackFileReader:
 
     def make_aligned_tbdict_from_tbdf_ELinitCM(self,tbdf):
         """
-        tbdictの欠損値に0を補完する. 
-        テンプレとしてcm_dictを利用して編集する.
-        EL stateが出現した時には, cm_deriv_dictの値を全て取ってくる.  
-        last modified: 2021-04-05-2312
+        Complements 0 to missing values in tbdict. 
+        Edit cm_dict as a template.
+        When EL state appears, all the values of cm_deriv_dict are taken.  
         """
         aligned_tbdict = copy.deepcopy(self.cm_deriv_dict)
         tbdict         = self._make_tbdict_from_tbdf(tbdf)
-        # node_dictの全てのkeyが存在するかを調べる
-        # 存在すれば, countを当てはめる
-        # 存在しなければ0をpadding.
+        # Is there all keys in node_dict?
+        # if there, assign count
+        # else padding with zero.
         modeEL = False
         for node, states_in_nodes in aligned_tbdict.items():
             for parent_state, trans_emit in states_in_nodes.items():
-                #ELmodeのときにS stateが出てきたらELmodeは終了
+                # ELmode ends when S state appears during ELmode
                 if modeEL and ("S" in parent_state):
                     modeEL = False
 
-                # parent stateがあるとき
                 if parent_state in tbdict.keys(): 
-                    # parent stateが存在する場合は, さらに深く調べる.
-                    # EL stateになる際には, transはcmから取って来るが, emitはする.
-                    # そのため, emitはmodeEL=Falseの条件で取り, transはmodeEL = Trueの条件でとる. 
                     for nuc, prob in trans_emit["emit"].items():
                         sum_count_from_parent = sum(tbdict[parent_state]["emit"].values())
                         if nuc in tbdict[parent_state]["emit"]:
@@ -534,15 +524,13 @@ class TracebackFileReader:
                             count = aligned_tbdict[node][parent_state]["emit"][nuc]
                         aligned_tbdict[node][parent_state]["emit"][nuc] = count
 
-                    # tbdictのchildにEL stateがある場合はmode ELを発動させる.
+                    # If tbdict's child has EL state, ELmode.
                     for tbchild in tbdict[parent_state]["trans"]:
                         if "EL_" in tbchild:
                             modeEL = True
                             break
 
                     for child_state, prob in trans_emit["trans"].items():
-                        # 最尤推定を計算するために合計transition数でわる
-                        # BIFは特殊な例とする.
                         sum_count_from_parent = 1 if "B" in parent_state else sum(tbdict[parent_state]["trans"].values()) 
                         if child_state in tbdict[parent_state]["trans"]:
                             val = tbdict[parent_state]["trans"][child_state]/sum_count_from_parent
@@ -583,12 +571,10 @@ def make_deriv_dict_from_trsp(cm_deriv_dict, trsp):
                 if nuc in {'A', 'C', 'G', 'U'}:
                     rule = Production(n, [nuc])
                     rule_i = all_rules.index(rule) -56
-                    # rule_i = cmreader.cfg.productions().index(rule) -56
                     rule_val = s[rule_i, s_i]
                 else:# double emissin
                     rule = Production(nl_nr, [nuc])
                     rule_i = all_rules.index(rule) -60
-                    # rule_i = cmreader.cfg.productions().index(rule) -60
                     rule_val = p[rule_i, p_i]
                 dirty_deriv_dict[node][parent_state]["emit"][nuc] = rule_val
             
@@ -614,7 +600,6 @@ def make_deriv_dict_from_trsp(cm_deriv_dict, trsp):
                     raise Exception(f"Unidentified parent_state_type: {parent_state_type}")
                 
                 rule_i = all_rules.index(rule)
-                # rule_i = cmreader.cfg.productions().index(rule)
                 rule_val = tr[rule_i, node_i]
                 dirty_deriv_dict[node][parent_state]["trans"][child_state] = rule_val
                 
@@ -635,14 +620,12 @@ def make_deriv_dict_from_trsp(cm_deriv_dict, trsp):
 # conversion of derivdict to tr/s/p
 def make_trsp_from_deriv_dict(path_to_cmfile, deriv_dict):
     """
-    last modified: 2021-04-05
+    function to make trsp(onehot) from dictionary of CM.
     """
     cmreader = CMReader(path_to_cmfile)
     trans_map, single_map, pair_map = [], [], []
     
     for node, states in deriv_dict.items():
-#         if re.match(r"(BIF|END|BEG)", node) == None:
-        # EL stateとかいうのがあり, skipされるstateがあるので+1
         trans_col    = [np.nan]*56
         for current_state_name, trans_emit in states.items():
 
@@ -672,7 +655,7 @@ def make_trsp_from_deriv_dict(path_to_cmfile, deriv_dict):
             torch.from_numpy(np.vstack(single_map)),\
             torch.from_numpy(np.vstack(pair_map))
 
-
+# test
 if __name__ == '__main__':
     # reader  = TracebackFileReader(
     #     "/Users/sumishunsuke/Desktop/RNA/genzyme/datasets/RF00163/RF00163.cm",

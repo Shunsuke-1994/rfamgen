@@ -25,8 +25,7 @@ class View(nn.Module):
 
 class Encoder(nn.Module):
     """
-    version: 2021/12/17.
-    Convolutional encoder for C/G-VAE(split type).
+    Convolutional encoder for C/G-VAE.
     """
     def __init__(self,
         seq_len,
@@ -96,7 +95,7 @@ class Encoder(nn.Module):
 
 class CovarianceModelEncoder(nn.Module):
     """
-    Convolutional encoder for CM-VAE(split type).
+    Convolutional encoder for CM-VAE.
     Applies a series of one-dimensional convolutions to a batch
     of tr/s/p encodings of the sequence of rules that generate
     an artithmetic expression.
@@ -194,6 +193,7 @@ class CovarianceModelEncoder(nn.Module):
         return self.mu(h), self.logvar(h)
 
 
+# test
 if __name__ == '__main__':
     # Load data
     import grammar 

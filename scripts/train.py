@@ -21,7 +21,6 @@ def modifiedCELoss(pred, soft_targets, gamma = 0, summarize = True):
     sotfmax = nn.Softmax(dim = -1)
     ce = - soft_targets/scale * ((1-sotfmax(pred)).pow(gamma)) * logsoftmax(pred)
     ce_colwise = torch.sum(ce, dim = -1)
-    # return torch.mean(ce_colwise)
     if summarize:
         return torch.sum(ce)
     else:
@@ -31,7 +30,6 @@ def save_model(model, dir_name, pt_file):
     if not os.path.isdir(dir_name):
         os.mkdir(dir_name)
     torch.save(model.state_dict(), os.path.join(dir_name , pt_file))
-    # print(f"Saved the model at {os.path.join(dir_name , pt_file)}")
 
 def write_csv(d, dir_name, fname):
     if not os.path.isdir(dir_name):
@@ -54,7 +52,6 @@ if __name__ == "__main__":
     from util import Timer, AnnealKL
     from torch.utils.data import DataLoader
 
-    # assert torch.cuda.is_available(), "CUDA is not available."
 
     parser = argparse.ArgumentParser()
     parser.add_argument('--data_dir', type = str, required=True, help = "directory containing X_train etc.")
@@ -99,7 +96,6 @@ if __name__ == "__main__":
     parser.add_argument('--log_dir', type = str, help = "directory for log output")
     parser.add_argument("--print_every", default = 20, type = int, help = "iteration num to print log of learning (default: 20)")
     args = parser.parse_args()
-    # pprint(vars(args))
 
     # training
     torch.manual_seed(args.random_seed)

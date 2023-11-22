@@ -89,7 +89,7 @@ def refold(aln_file, n_turn = 2):
     """
     refold sequences from aligned sequences.
     1. run RNAalifold -f S --SS_cons
-    2. run refold.pl −−turn 2
+    2. run refold.pl --turn 2
     3. RNAfold -C --enforceConstraint
     ref: https://www.tbi.univie.ac.at/RNA/refold.1.html
     """

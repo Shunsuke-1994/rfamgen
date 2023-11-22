@@ -37,7 +37,7 @@ class MyDataset(Dataset):
 
 class CovarianceModelVAE(nn.Module):
     """
-    CM-VAE(split type)
+    CM-VAE. Encode and Decode CM or alignment on CM. 
     """
     def __init__(self,
         hidden_encoder_size,
@@ -155,7 +155,7 @@ class CovarianceModelVAE(nn.Module):
         return model
 
 
-if __name__ == "__main__":
-    cmvae = CovarianceModelVAE.build_CMVAE_from_config("./outputs/EXP06/EXP06-31/config.yaml")
-    print(cmvae)
+# if __name__ == "__main__":
+#     cmvae = CovarianceModelVAE.build_CMVAE_from_config("./outputs/EXP06/EXP06-31/config.yaml")
+#     print(cmvae)
 

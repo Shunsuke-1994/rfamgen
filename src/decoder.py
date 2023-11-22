@@ -24,7 +24,7 @@ class View(nn.Module):
 
 class Decoder(nn.Module):
     """
-    Convolutional decoder for C/G-VAE(split type).
+    Convolutional decoder for C/G-VAE. 
     """
     def __init__(self,
         seq_len,
@@ -147,13 +147,12 @@ class CovarianceModelDecoder(nn.Module):
         def get_padding_param(tr_len, s_len, p_len):
             
             def outpads(leng):
-                # encode側の計算
+                # calc on encoder side
                 conv1_in = leng
                 conv2_in = int(((conv1_in + 2*(self.ker1//2) - self.ker1)/self.stride)+1) 
                 conv3_in = int(((conv2_in + 2*0 - self.ker2)/1)+1)
                 conv3_out= int(((conv3_in + 2*0 - self.ker3)/1)+1)
 
-                # これがoutput_padding = 0の時, convtransposeで出てくる長さ
                 deconv3_out = int((conv3_out   - 1) * 1 - 2*0 + (self.ker3 - 1) + 1)
                 deconv2_out = int((deconv3_out - 1) * 1 - 2*0 + (self.ker2 - 1) + 1)
                 deconv1_out = int((deconv2_out - 1) * self.stride - 2*(self.ker1//2) + (self.ker1 - 1) + 1)
@@ -228,6 +227,8 @@ class CovarianceModelDecoder(nn.Module):
         return self.tr_decode(h_tr), self.s_decode(h_s), self.p_decode(h_p)
 
 
+
+# test
 if __name__ == '__main__':
     import h5py
     from torch.distributions import Normal
@@ -251,11 +252,9 @@ if __name__ == '__main__':
     # Pass through some data
     x = torch.from_numpy(data[:BATCH_SIZE]).transpose(-2, -1).float() # shape [batch, LEN_GRAMMAR, MAX_LEN]
     print("input shape:", x.shape)
-    _, y = x.max(1) # 配列ごとに最大のindexをとるので-1
+    _, y = x.max(1) 
     print("x: ", x)
-
     print("y: ", y)
-    # print(x.shape)
     mu, logvar = encoder(x)
 
     decoder = Decoder(z_dim = Z_DIM, hidden_size = HIDDEN_SIZE, len_grammar = LEN_GRAMMAR, max_len = MAX_LEN, decode_type="conv_mini", n_fc = 0)
@@ -263,16 +262,15 @@ if __name__ == '__main__':
     sigma  = (0.5*logvar).exp()
     normal = Normal(torch.zeros(mu.shape), torch.ones(sigma.shape))
     eps = normal.sample()
-    z   = mu + eps*torch.sqrt(sigma) # sigma
-    # print("z: ", z)
+    z   = mu + eps*torch.sqrt(sigma)
 
-    criterion = torch.nn.CrossEntropyLoss() # class分類はmaxlen * batchsizeの分だけ行わないとダメ.
+    criterion = torch.nn.CrossEntropyLoss() 
 
     logits = decoder(z)
     print("output shape:", logits.shape) # shape [batch, LEN_GRAMMAR, MAX_LEN]
     logits = logits.transpose(1,2)
     logits = logits.reshape(-1, logits.size(-1)) # batch x MAX_LEN, LEN_GRAMMAR
-    y = y.view(-1) # batch x seqlen = 75
+    y = y.view(-1) 
     print(y.shape, y)
     print("logits: ", logits.shape)
     loss = criterion(logits, y)

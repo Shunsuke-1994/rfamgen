@@ -21,7 +21,6 @@ def _pairwise_MI(align_i_j):
         # entropy
         col_i = align[:, i]
         nuc_count = Counter(col_i)
-        # mi_diag = [(c/aln_size)*(np.log2(c) - np.log2(aln_size) + 2) for nuc, c in nuc_count.items() if nuc != "-"]
         mi_diag = [(c/aln_size)*(np.log2(c) - np.log2(aln_size) + 2) for nuc, c in nuc_count.items()]
 
         return i, i, sum(mi_diag)

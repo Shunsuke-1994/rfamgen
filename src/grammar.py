@@ -230,7 +230,7 @@ def make_nltk_tree_from_derivation(derivation, print_error = False):
                 rule = derivation.popleft()
             return Tree(node, [make_tree_from_node(next_node) if isinstance(next_node, Nonterminal) else next_node for next_node in rule.rhs()])
         except:
-            # もし再構成できなかったらそれまでのrulesを返す
+            # for debug
             if print_error:
                 print(rules)
     return make_tree_from_node(start_node)
