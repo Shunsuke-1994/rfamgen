@@ -189,7 +189,7 @@ def split_fasta_train_test_valid(fasta, train_size = 0.7):
             if not str(seq_record.id) in dict_seq:
                 dict_seq[str(seq_record.id)] = str(seq_record.seq)
 
-    ID_train, ID_test_valid = train_test_split(list(dict_seq.keys()), train_size=0.8)
+    ID_train, ID_test_valid = train_test_split(list(dict_seq.keys()), train_size=train_size)
     ID_test, ID_valid       = train_test_split(ID_test_valid, train_size=0.5)
     dir_name, filename      = os.path.split(fasta)
     train_file              = os.path.join(dir_name, "train", "train_"+filename)
