@@ -93,7 +93,7 @@ def compute_and_write_weight(X_fname, threshold, outfile, mode = "cm", sampling_
             for i in range(Ntotal):
                 tmp_index = set(range(Ntotal))
                 tmp_index.remove(i)
-                sampled_index = random.sample(tmp_index, k = int(n_samples -1))
+                sampled_index = random.sample(list(tmp_index), k = int(n_samples -1))
                 x_i = onehot[i]
                 onehot_pairs = [(x_i, onehot[j]) for j in sampled_index]
 
