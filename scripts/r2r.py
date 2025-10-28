@@ -1,7 +1,9 @@
 # a wrapper script for r2r.
 # ref: https://sourceforge.net/projects/weinberg-r2r/
 
-import subprocess
+import subprocess, os
+# os.environ["PATH"] = "/path/to/r2r" 
+
 import h5py
 from Bio import AlignIO
 
