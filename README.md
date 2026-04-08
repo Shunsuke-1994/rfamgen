@@ -202,3 +202,38 @@ conda env create -f requirements_bayesiankin.yaml
 see more details in `/notebooks/bayesiankinetics/kinetics_analysis_bypyro.ipynb`  
 It takes less than 1 day to estimate the kinetics of 2000 sequences x2 replicates with SVI.
 The NGS data are available on [PRJNA1044007 of SRA](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1044007).
+
+## バグ修正
+
+### 1. Reparameterization trick における不要な sqrt (CMVAE.py)
+**ファイル:** `src/models/CMVAE.py` — `sample()`
+
+```python
+# 修正前（バグ）
+sigma = (0.5 * logvar).exp()        # = exp(logvar/2) = 標準偏差 σ
+z     = mu + eps * torch.sqrt(sigma) # さらに sqrt → σ^0.5 になってしまう
+
+# 修正後
+sigma = (0.5 * logvar).exp()        # = σ
+z     = mu + eps * sigma             # 正しい: z ~ N(mu, σ²)
+```
+
+**影響:** 標準偏差が実質的に σ^0.5 に縮小され、reparameterization trick で注入されるノイズが本来より小さくなっていた。これにより潜在変数がエンコーダの平均値付近に過度に集中し、潜在空間が意図より狭く学習される原因となっていた。
+
+### 2. KL 項の重みに余分な batch_size の乗算 (train.py)
+**ファイル:** `scripts/train.py`
+
+```python
+# 修正前（バグ）
+beta_sum_batch = args.beta * args.batch_size
+
+# 修正後
+beta_sum_batch = args.beta
+```
+
+**影響:** 再構成損失・KL ダイバージェンスはともにバッチ内で合計（sum）されているため、`beta` にさらに `batch_size` を乗じると KL 項が `batch_size` 倍に過大評価される。これにより過剰な正則化がかかり、posterior collapse（潜在変数が無視される現象）を引き起こす可能性があった。
+
+### 補足
+これら2つのバグは部分的に相殺する効果を持っていた。バグ1はサンプリングノイズを過小にし（KL ペナルティの実質的な影響を弱め）、バグ2は KL 項を過大に重み付けしていた。そのため、両バグが同時に存在する状態でも一見学習が進んでいるように見えていたが、ELBO の最適化は数学的に正しくなかった。**これらの修正以前に学習したモデルは再学習を推奨する。**
+
+**修正ブランチ:** `bug-fix`
