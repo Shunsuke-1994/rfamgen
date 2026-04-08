@@ -1,6 +1,6 @@
 # rfamgen
 
-> **Important:** Critical bugs in the ELBO computation have been found and fixed on the `bug-fix` branch. Models trained with the original code should be retrained. See [Bug fixes](#bug-fixes) for details.
+> **Note:** Bugs in the ELBO computation have been found and fixed on the `bug-fix` branch. Models trained before these fixes may produce different results when retrained with the corrected codes. See [Bug fixes](#bug-fixes) for details.
 
 We tested all the following commands in macOS(v12.1) and Linux(v3.10) environment.  
 ## install with conda
@@ -237,6 +237,6 @@ beta_sum_batch = args.beta
 **Impact:** Since both the reconstruction loss and KL divergence are summed (not averaged) over the batch, the extra `batch_size` multiplication caused the KL term to be over-weighted by a factor of `batch_size`. This led to excessive regularization, potentially causing posterior collapse.
 
 ### Note
-These two bugs had partially compensating effects: Bug 1 under-estimated the sampling noise (weakening the KL penalty's effective role), while Bug 2 over-weighted the KL term. As a result, models trained with both bugs present may have appeared to work reasonably, but the ELBO optimization was not mathematically correct. **Models trained before these fixes should be retrained.**
+These two bugs had partially compensating effects: Bug 1 under-estimated the sampling noise (weakening the KL penalty's effective role), while Bug 2 over-weighted the KL term. As a result, models trained with both bugs present may have appeared to work reasonably, but the ELBO optimization was not mathematically correct. **Models trained before these fixes may produce different results when retrained with the corrected codes.**
 
 **Fixed on branch:** `bug-fix`
