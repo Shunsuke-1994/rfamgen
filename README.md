@@ -1,4 +1,7 @@
 # rfamgen
+
+> **Important:** Critical bugs in the ELBO computation have been found and fixed on the `bug-fix` branch. Models trained with the original code should be retrained. See [Bug fixes](#bug-fixes) for details.
+
 We tested all the following commands in macOS(v12.1) and Linux(v3.10) environment.  
 ## install with conda
 
@@ -203,37 +206,37 @@ see more details in `/notebooks/bayesiankinetics/kinetics_analysis_bypyro.ipynb`
 It takes less than 1 day to estimate the kinetics of 2000 sequences x2 replicates with SVI.
 The NGS data are available on [PRJNA1044007 of SRA](https://www.ncbi.nlm.nih.gov/bioproject/PRJNA1044007).
 
-## バグ修正
+## Bug fixes
 
-### 1. Reparameterization trick における不要な sqrt (CMVAE.py)
-**ファイル:** `src/models/CMVAE.py` — `sample()`
+### 1. Redundant sqrt in reparameterization trick (CMVAE.py)
+**File:** `src/models/CMVAE.py` — `sample()`
 
 ```python
-# 修正前（バグ）
-sigma = (0.5 * logvar).exp()        # = exp(logvar/2) = 標準偏差 σ
-z     = mu + eps * torch.sqrt(sigma) # さらに sqrt → σ^0.5 になってしまう
+# Before (bug)
+sigma = (0.5 * logvar).exp()        # = exp(logvar/2) = standard deviation σ
+z     = mu + eps * torch.sqrt(sigma) # sqrt applied again → σ^0.5
 
-# 修正後
+# After (fix)
 sigma = (0.5 * logvar).exp()        # = σ
-z     = mu + eps * sigma             # 正しい: z ~ N(mu, σ²)
+z     = mu + eps * sigma             # correct: z ~ N(mu, σ²)
 ```
 
-**影響:** 標準偏差が実質的に σ^0.5 に縮小され、reparameterization trick で注入されるノイズが本来より小さくなっていた。これにより潜在変数がエンコーダの平均値付近に過度に集中し、潜在空間が意図より狭く学習される原因となっていた。
+**Impact:** The standard deviation was effectively reduced to σ^0.5, compressing the noise injected during the reparameterization trick. This caused the sampled latent variables to cluster closer to the mean than intended, making the learned latent space narrower and distorting the balance between reconstruction loss and KL divergence.
 
-### 2. KL 項の重みに余分な batch_size の乗算 (train.py)
-**ファイル:** `scripts/train.py`
+### 2. Extra batch_size multiplication on KL weight (train.py)
+**File:** `scripts/train.py`
 
 ```python
-# 修正前（バグ）
+# Before (bug)
 beta_sum_batch = args.beta * args.batch_size
 
-# 修正後
+# After (fix)
 beta_sum_batch = args.beta
 ```
 
-**影響:** 再構成損失・KL ダイバージェンスはともにバッチ内で合計（sum）されているため、`beta` にさらに `batch_size` を乗じると KL 項が `batch_size` 倍に過大評価される。これにより過剰な正則化がかかり、posterior collapse（潜在変数が無視される現象）を引き起こす可能性があった。
+**Impact:** Since both the reconstruction loss and KL divergence are summed (not averaged) over the batch, the extra `batch_size` multiplication caused the KL term to be over-weighted by a factor of `batch_size`. This led to excessive regularization, potentially causing posterior collapse.
 
-### 補足
-これら2つのバグは部分的に相殺する効果を持っていた。バグ1はサンプリングノイズを過小にし（KL ペナルティの実質的な影響を弱め）、バグ2は KL 項を過大に重み付けしていた。そのため、両バグが同時に存在する状態でも一見学習が進んでいるように見えていたが、ELBO の最適化は数学的に正しくなかった。**これらの修正以前に学習したモデルは再学習を推奨する。**
+### Note
+These two bugs had partially compensating effects: Bug 1 under-estimated the sampling noise (weakening the KL penalty's effective role), while Bug 2 over-weighted the KL term. As a result, models trained with both bugs present may have appeared to work reasonably, but the ELBO optimization was not mathematically correct. **Models trained before these fixes should be retrained.**
 
-**修正ブランチ:** `bug-fix`
+**Fixed on branch:** `bug-fix`
