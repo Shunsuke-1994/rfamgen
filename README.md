@@ -239,4 +239,6 @@ beta_sum_batch = args.beta
 ### Note
 These two bugs had partially compensating effects: Bug 1 under-estimated the sampling noise (weakening the KL penalty's effective role), while Bug 2 over-weighted the KL term. As a result, models trained with both bugs present may have appeared to work reasonably, but the ELBO optimization was not mathematically correct. **Models trained before these fixes may produce different results when retrained with the corrected codes.**
 
+A comparison of results between the original and corrected code will be provided in a future update.
+
 **Fixed on branch:** `bug-fix`
