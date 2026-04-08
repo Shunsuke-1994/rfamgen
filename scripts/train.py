@@ -140,7 +140,8 @@ if __name__ == "__main__":
         conv_params = conv_params,
     )
     anneal = AnnealKL(step = (DATA_SIZE / args.batch_size * args.anneal_saturate_rate)**-1, rate = args.anneal_rate)
-    beta_sum_batch = args.beta * args.batch_size
+    # beta_sum_batch = args.beta * args.batch_size
+    beta_sum_batch = args.beta  # fixed: no extra batch_size multiplication
     optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
 
     def train_model(log):
